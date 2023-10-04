@@ -42,6 +42,10 @@ P.S. You can delete this when you're done too. It's your config now :)
 --  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
+vim.loader.enable()
 
 -- Install package manager
 --    https://github.com/folke/lazy.nvim
@@ -70,6 +74,12 @@ require('lazy').setup({
   -- Git related plugins
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
+  'tpope/vim-surround',
+  'tpope/vim-repeat',
+  'jiangmiao/auto-pairs',
+  'hashivim/vim-terraform',
+  'juliosueiras/vim-terraform-completion',
+  'mfussenegger/nvim-lint',
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
@@ -91,6 +101,14 @@ require('lazy').setup({
       -- Additional lua configuration, makes nvim stuff amazing!
       'folke/neodev.nvim',
     },
+  },
+
+  {
+    -- Nvim Tree
+    'nvim-tree/nvim-tree.lua',
+    dependencies = {
+      'nvim-tree/nvim-web-devicons'
+    }
   },
 
   {
@@ -227,7 +245,7 @@ require('lazy').setup({
 -- NOTE: You can change these options as you wish!
 
 -- Set highlight on search
-vim.o.hlsearch = false
+vim.o.hlsearch = true
 
 -- Make line numbers default
 vim.wo.number = true
@@ -273,6 +291,12 @@ vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 
+vim.keymap.set('n', '<C-h>', '<C-w>h')
+vim.keymap.set('n', '<C-j>', '<C-w>j')
+vim.keymap.set('n', '<C-k>', '<C-w>k')
+vim.keymap.set('n', '<C-l>', '<C-w>l')
+vim.keymap.set('n', '//', ':nohlsearch<CR>')
+
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
@@ -282,6 +306,37 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
   group = highlight_group,
   pattern = '*',
+})
+
+-- [[ Configure Nvim Tree ]]
+require("nvim-tree").setup({
+  sort_by = "case_sensitive",
+  view = {
+    width = 30,
+  },
+  renderer = {
+    group_empty = true,
+    system_open = {
+      cmd = "open"
+    }
+  },
+  filters = {
+    dotfiles = false,
+  },
+})
+
+vim.keymap.set('n', '<C-t>', ':NvimTreeToggle<CR>')
+vim.keymap.set('n', '<C-\\>', ':NvimTreeFindFile<CR>')
+
+-- [[ Configure Linters ]]
+require('lint').linters_by_ft = {
+  ruby = {'rubocop',}
+}
+
+vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+  callback = function()
+    require("lint").try_lint()
+  end,
 })
 
 -- [[ Configure Telescope ]]
@@ -460,8 +515,11 @@ local servers = {
   -- gopls = {},
   -- pyright = {},
   -- rust_analyzer = {},
-  -- tsserver = {},
-  -- html = { filetypes = { 'html', 'twig', 'hbs'} },
+  tsserver = {},
+  html = { filetypes = { 'html', 'twig', 'hbs'} },
+  solargraph = {},
+  rubocop = {},
+  emmet_ls = { filetypes = { 'html', 'css', 'jsx'} },
 
   lua_ls = {
     Lua = {

@@ -44,6 +44,8 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
+vim.g.terraform_fmt_on_save = 1
+vim.g.terraform_align = 1
 
 vim.loader.enable()
 
@@ -104,10 +106,11 @@ require('lazy').setup({
   },
 
   {
-    -- Nvim Tree
-    'nvim-tree/nvim-tree.lua',
+    -- NerdTree
+    'scrooloose/nerdtree',
     dependencies = {
-      'nvim-tree/nvim-web-devicons'
+      'Xuyuanp/nerdtree-git-plugin',
+      -- 'ryanoasis/vim-devicons',
     }
   },
 
@@ -124,6 +127,10 @@ require('lazy').setup({
 
       -- Adds a number of user-friendly snippets
       'rafamadriz/friendly-snippets',
+
+      'hrsh7th/cmp-buffer',
+      'hrsh7th/cmp-path',
+      'hrsh7th/cmp-cmdline',
     },
   },
 
@@ -225,6 +232,13 @@ require('lazy').setup({
     build = ':TSUpdate',
   },
 
+  {
+    'tzachar/local-highlight.nvim',
+    config = function()
+      require('local-highlight').setup()
+    end
+  },
+
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
   --       These are some example plugins that I've included in the kickstart repository.
   --       Uncomment any of the lines below to enable them.
@@ -308,25 +322,27 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   pattern = '*',
 })
 
--- [[ Configure Nvim Tree ]]
-require("nvim-tree").setup({
-  sort_by = "case_sensitive",
-  view = {
-    width = 30,
-  },
-  renderer = {
-    group_empty = true,
-    system_open = {
-      cmd = "open"
-    }
-  },
-  filters = {
-    dotfiles = false,
-  },
-})
-
-vim.keymap.set('n', '<C-t>', ':NvimTreeToggle<CR>')
-vim.keymap.set('n', '<C-\\>', ':NvimTreeFindFile<CR>')
+-- [[ Configure NERD Tree ]]
+vim.keymap.set('n', '<C-t>', ':NERDTreeToggle<CR>')
+vim.keymap.set('n', '<C-\\>', ':NERDTreeFind<CR>')
+vim.g.NERDTreeWinSize = 25
+vim.g.NERDTreeGitStatusUseNerdFonts = 1
+vim.g.NERDTreeGitStatusConcealBrackets = 1
+vim.g.NERDTreeShowHidden = 1
+vim.g.NERDTreeIgnore = { '^node_modules$' }
+vim.g.NERDTreeGitStatusIndicatorMapCustom = {
+  ['Modified'] = '✹',
+  ['Staged'] = '✚',
+  ['Untracked'] = '✭',
+  ['Renamed'] = '➜',
+  ['Unmerged'] = '═',
+  ['Deleted'] = '✖',
+  ['Dirty'] = '✗',
+  ['Ignored'] = '☒',
+  ['Clean'] = '✔︎',
+  ['Unknown'] = '?',
+}
+-- vim.g.NERDTreeIgnore = '^node_modules$'
 
 -- [[ Configure Linters ]]
 require('lint').linters_by_ft = {
@@ -514,12 +530,13 @@ local servers = {
   -- clangd = {},
   -- gopls = {},
   -- pyright = {},
-  -- rust_analyzer = {},
+  rust_analyzer = {},
   tsserver = {},
   html = { filetypes = { 'html', 'twig', 'hbs'} },
-  solargraph = {},
-  rubocop = {},
+  solargraph = { filetypes = { 'ruby' } },
+  rubocop = { filetypes = { 'ruby' } },
   emmet_ls = { filetypes = { 'html', 'css', 'jsx'} },
+  terraformls = {},
 
   lua_ls = {
     Lua = {
@@ -597,8 +614,10 @@ cmp.setup {
     end, { 'i', 's' }),
   },
   sources = {
+    { name = 'buffer' },
     { name = 'nvim_lsp' },
     { name = 'luasnip' },
+    { name = 'path' },
   },
 }
 
